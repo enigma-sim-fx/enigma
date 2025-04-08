@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>ENIGMA</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -14,7 +14,7 @@
       padding: 20px;
     }
 
-    button, input {
+    button {
       padding: 10px;
       font-size: 16px;
       margin: 5px;
@@ -30,14 +30,8 @@
       margin-bottom: 20px;
       display: flex;
       justify-content: center;
-      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
-    }
-
-    #rInput {
-      width: 70px;
-      text-align: center;
     }
 
     .bubble-container {
@@ -52,20 +46,10 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      opacity: 0;
-      transform: scale(0.5);
-      animation: pop 0.3s forwards;
     }
 
     .bubble.win { background-color: #28a745; }
     .bubble.loss { background-color: #dc3545; }
-
-    @keyframes pop {
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
 
     canvas {
       max-width: 600px;
@@ -105,15 +89,15 @@
   <h1>ENIGMA</h1>
 
   <div class="buttons">
-    <input type="number" id="rInput" step="0.1" placeholder="R Value">
     <button class="win-btn" onclick="logTrade(true)">✔</button>
     <button class="loss-btn" onclick="logTrade(false)">✘</button>
     <button class="undo-btn" onclick="undoLastTrade()">⮌</button>
   </div>
 
+  <canvas id="pnlChart" width="400" height="200"></canvas>
+
   <div class="bubble-container" id="bubbleContainer"></div>
 
-  <canvas id="pnlChart" width="400" height="200"></canvas>
   <div class="winrate-box" id="winRateBox">Win Rate: 0%</div>
   <div class="streak" id="streakDisplay">Streak: 0</div>
 
@@ -177,9 +161,7 @@
     }
 
     function logTrade(win) {
-      const rInput = parseFloat(document.getElementById("rInput").value) || (win ? 2 : -1);
-      const rValue = win ? Math.abs(rInput) : -Math.abs(rInput);
-
+      const rValue = win ? 2 : -1;
       tradeHistory.push(rValue);
       currentPnL += rValue;
 
@@ -197,7 +179,6 @@
         winStreak = 0;
       }
 
-      // Motivational popups
       if (lossStreak === 3) showPopup(popupMessagesLoss);
       if (winStreak === 3) {
         showPopup(popupMessagesWin);
@@ -217,13 +198,14 @@
     function undoLastTrade() {
       if (tradeHistory.length === 0) return;
       const lastTrade = tradeHistory.pop();
-      const bubbles = document.querySelectorAll('.bubble');
-      const lastBubble = bubbles[bubbles.length - 1];
-      if (lastBubble) lastBubble.remove();
-
       currentPnL -= lastTrade;
+
+      const bubbles = document.querySelectorAll('.bubble');
+      if (bubbles.length) bubbles[bubbles.length - 1].remove();
+
       pnlData.pop();
       pnlLabels.pop();
+
       winStreak = 0;
       lossStreak = 0;
 
@@ -241,9 +223,9 @@
     }
 
     function updateStreakDisplay() {
-      document.getElementById('streakDisplay').textContent = 
-        winStreak ? `Streak: ${winStreak} Win` : 
-        lossStreak ? `Streak: ${lossStreak} Loss` : 
+      document.getElementById('streakDisplay').textContent =
+        winStreak ? `Streak: ${winStreak} Win` :
+        lossStreak ? `Streak: ${lossStreak} Loss` :
         'Streak: 0';
     }
 
