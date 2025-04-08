@@ -1,118 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>ENIGMA</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
     body {
+      background: #000;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
-      background: #000;
-      color: #fff;
     }
-    button, input, select {
+
+    button, input {
       padding: 10px;
       font-size: 16px;
       margin: 5px;
       border-radius: 5px;
       border: none;
     }
-    input, select {
-      width: 200px;
-    }
+
     .win-btn { background: #28a745; color: white; }
     .loss-btn { background: #dc3545; color: white; }
     .undo-btn { background: #ff9900; color: white; }
-    .buttons { margin-bottom: 20px; }
+
+    .buttons {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #rInput {
+      width: 70px;
+      text-align: center;
+    }
+
     .bubble-container {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
+      gap: 6px;
       margin: 20px 0;
-      gap: 8px;
     }
+
     .bubble {
-      width: 25px;
-      height: 25px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       opacity: 0;
       transform: scale(0.5);
       animation: pop 0.3s forwards;
     }
+
     .bubble.win { background-color: #28a745; }
     .bubble.loss { background-color: #dc3545; }
+
     @keyframes pop {
       to {
         opacity: 1;
         transform: scale(1);
       }
     }
+
     canvas {
       max-width: 600px;
       margin: 20px auto;
-    }
-    .streak { margin: 10px 0; font-size: 18px; }
-    .winrate-box { font-size: 20px; font-weight: bold; margin-top: 10px; }
-    .calc-container {
       background: #111;
-      padding: 20px;
-      margin-top: 40px;
       border-radius: 10px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      padding: 10px;
     }
-    .calc-container h2 {
-      margin-bottom: 10px;
-    }
-    .calc-result {
-      margin-top: 10px;
+
+    .streak, .winrate-box {
       font-size: 18px;
-      font-weight: bold;
-      color: #00ffcc;
+      margin-top: 10px;
+    }
+
+    #popup {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #000;
+      border: 2px solid #fff;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      z-index: 9999;
+      width: 300px;
+      box-shadow: 0 0 10px #fff;
+    }
+
+    #popup p {
+      margin: 0;
     }
   </style>
 </head>
 <body>
+
   <h1>ENIGMA</h1>
 
   <div class="buttons">
-    <button class="win-btn" onclick="logTrade(true)">Win</button>
-    <button class="loss-btn" onclick="logTrade(false)">Loss</button>
-    <button class="undo-btn" onclick="undoLastTrade()">Undo</button>
+    <input type="number" id="rInput" step="0.1" placeholder="R Value">
+    <button class="win-btn" onclick="logTrade(true)">✔</button>
+    <button class="loss-btn" onclick="logTrade(false)">✘</button>
+    <button class="undo-btn" onclick="undoLastTrade()">⮌</button>
   </div>
 
-  <div class="streak" id="streakDisplay">Streak: 0</div>
+  <div class="bubble-container" id="bubbleContainer"></div>
 
   <canvas id="pnlChart" width="400" height="200"></canvas>
   <div class="winrate-box" id="winRateBox">Win Rate: 0%</div>
+  <div class="streak" id="streakDisplay">Streak: 0</div>
 
-  <!-- Position Size Calculator -->
-  <div class="calc-container">
-    <h2>Position Size Calculator</h2>
-    <input type="number" id="accountSize" placeholder="Account Size (USD)">
-    <input type="number" id="riskPercent" placeholder="Risk per Trade (%)">
-    <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
-    <select id="pair">
-      <option value="EURUSD">EURUSD</option>
-      <option value="GBPUSD">GBPUSD</option>
-      <option value="AUDUSD">AUDUSD</option>
-      <option value="USDCAD">USDCAD</option>
-      <option value="USDJPY">USDJPY</option>
-    </select>
-    <button onclick="calculatePositionSize()">Calculate</button>
-    <div class="calc-result" id="calcResult">Position Size: -</div>
-  </div>
-
-  <!-- Bubble Display Section (Below calculator) -->
-  <div class="bubble-container" id="bubbleContainer"></div>
-
-  <!-- Sounds -->
+  <audio id="cheerSound" src="https://assets.mixkit.co/sfx/download/mixkit-cheering-crowd-loud-481.wav"></audio>
   <audio id="winSound" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.wav"></audio>
   <audio id="lossSound" src="https://assets.mixkit.co/sfx/download/mixkit-wrong-answer-fail-notification-946.wav"></audio>
+
+  <div id="popup"><p id="popupMessage"></p></div>
 
   <script>
     let pnlData = [0];
@@ -122,8 +131,23 @@
     let lossStreak = 0;
     let tradeHistory = [];
 
-    const ctx = document.getElementById('pnlChart').getContext('2d');
-    const chart = new Chart(ctx, {
+    const popupMessagesLoss = [
+      "Take a breath. Reset your mind.",
+      "Losses are part of the game. Stay focused.",
+      "Chill. You've got this.",
+      "Step back, then step up stronger.",
+      "Breathe. Regain clarity."
+    ];
+
+    const popupMessagesWin = [
+      "Great consistency — stay sharp.",
+      "Keep the rhythm going.",
+      "Well played — trust your process.",
+      "Momentum is good, stay disciplined.",
+      "You're doing well — stick to the plan."
+    ];
+
+    const chart = new Chart(document.getElementById('pnlChart'), {
       type: 'line',
       data: {
         labels: pnlLabels,
@@ -136,81 +160,57 @@
         }]
       },
       options: {
-        plugins: {
-          legend: {
-            labels: { color: '#fff' }
-          }
-        },
+        plugins: { legend: { labels: { color: '#fff' } } },
         scales: {
-          x: {
-            ticks: { color: '#fff' },
-            grid: { color: '#333' }
-          },
-          y: {
-            ticks: { color: '#fff' },
-            grid: { color: '#333' }
-          }
+          x: { ticks: { color: '#fff' }, grid: { color: '#444' } },
+          y: { ticks: { color: '#fff' }, grid: { color: '#444' } }
         }
       }
     });
 
-    function saveData() {
-      localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
-      localStorage.setItem('currentPnL', currentPnL);
-    }
-
-    function loadData() {
-      const savedHistory = JSON.parse(localStorage.getItem('tradeHistory'));
-      const savedPnL = parseInt(localStorage.getItem('currentPnL'));
-
-      if (savedHistory && !isNaN(savedPnL)) {
-        tradeHistory = savedHistory;
-        currentPnL = savedPnL;
-        pnlData = [0];
-        pnlLabels = ['Start'];
-        document.getElementById('bubbleContainer').innerHTML = '';
-        savedHistory.forEach((win, index) => {
-          const bubble = document.createElement('div');
-          bubble.classList.add('bubble', win ? 'win' : 'loss');
-          document.getElementById('bubbleContainer').appendChild(bubble);
-
-          pnlData.push(pnlData[pnlData.length - 1] + (win ? 2 : -1));
-          pnlLabels.push(`Trade ${index + 1}`);
-        });
-        chart.data.labels = pnlLabels;
-        chart.data.datasets[0].data = pnlData;
-        chart.update();
-        updateWinRate();
-        updateStreakDisplay();
-      }
+    function showPopup(messageArray) {
+      const message = messageArray[Math.floor(Math.random() * messageArray.length)];
+      const popup = document.getElementById('popup');
+      document.getElementById('popupMessage').textContent = message;
+      popup.style.display = 'block';
+      setTimeout(() => popup.style.display = 'none', 4000);
     }
 
     function logTrade(win) {
-      tradeHistory.push(win);
+      const rInput = parseFloat(document.getElementById("rInput").value) || (win ? 2 : -1);
+      const rValue = win ? Math.abs(rInput) : -Math.abs(rInput);
+
+      tradeHistory.push(rValue);
+      currentPnL += rValue;
+
       const bubble = document.createElement('div');
       bubble.classList.add('bubble', win ? 'win' : 'loss');
       document.getElementById('bubbleContainer').appendChild(bubble);
 
       if (win) {
-        currentPnL += 2;
         document.getElementById('winSound').play();
         winStreak++;
         lossStreak = 0;
       } else {
-        currentPnL -= 1;
         document.getElementById('lossSound').play();
         lossStreak++;
         winStreak = 0;
       }
 
-      if (currentPnL % 10 === 0 && currentPnL !== 0) {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        alert(`Milestone! You're at ${currentPnL}R`);
+      // Motivational popups
+      if (lossStreak === 3) showPopup(popupMessagesLoss);
+      if (winStreak === 3) {
+        showPopup(popupMessagesWin);
+        document.getElementById('cheerSound').play();
+        confetti({ particleCount: 100, spread: 70, origin: { x: 0.2, y: 0.6 } });
+        confetti({ particleCount: 100, spread: 70, origin: { x: 0.8, y: 0.6 } });
       }
 
-      updateChart();
-      updateStreakDisplay();
+      pnlData.push(currentPnL);
+      pnlLabels.push(`Trade ${pnlData.length - 1}`);
+      chart.update();
       updateWinRate();
+      updateStreakDisplay();
       saveData();
     }
 
@@ -221,89 +221,60 @@
       const lastBubble = bubbles[bubbles.length - 1];
       if (lastBubble) lastBubble.remove();
 
-      if (lastTrade) currentPnL -= 2;
-      else currentPnL += 1;
-
+      currentPnL -= lastTrade;
       pnlData.pop();
       pnlLabels.pop();
+      winStreak = 0;
+      lossStreak = 0;
+
       chart.update();
-      updateStreakDisplay();
       updateWinRate();
+      updateStreakDisplay();
       saveData();
     }
 
-    function updateChart() {
-      pnlData.push(currentPnL);
-      pnlLabels.push(`Trade ${pnlData.length - 1}`);
-      chart.update();
-    }
-
-    function updateStreakDisplay() {
-      let message = 'Streak: ';
-      if (winStreak >= 3) {
-        message += `${winStreak} Wins in a Row!`;
-      } else if (lossStreak >= 3) {
-        message += `${lossStreak} Losses...`;
-      } else {
-        message += winStreak > 0 ? `${winStreak} Win` : lossStreak > 0 ? `${lossStreak} Loss` : '0';
-      }
-      document.getElementById('streakDisplay').textContent = message;
-    }
-
     function updateWinRate() {
-      const totalTrades = tradeHistory.length;
-      const wins = tradeHistory.filter(t => t).length;
-      const rate = totalTrades === 0 ? 0 : ((wins / totalTrades) * 100).toFixed(1);
+      const total = tradeHistory.length;
+      const wins = tradeHistory.filter(r => r > 0).length;
+      const rate = total ? ((wins / total) * 100).toFixed(1) : 0;
       document.getElementById('winRateBox').textContent = `Win Rate: ${rate}%`;
     }
 
-    function saveCalcInputs() {
-      localStorage.setItem("accountSize", document.getElementById("accountSize").value);
-      localStorage.setItem("riskPercent", document.getElementById("riskPercent").value);
+    function updateStreakDisplay() {
+      document.getElementById('streakDisplay').textContent = 
+        winStreak ? `Streak: ${winStreak} Win` : 
+        lossStreak ? `Streak: ${lossStreak} Loss` : 
+        'Streak: 0';
     }
 
-    function loadCalcInputs() {
-      const accountSize = localStorage.getItem("accountSize");
-      const riskPercent = localStorage.getItem("riskPercent");
-
-      if (accountSize) document.getElementById("accountSize").value = accountSize;
-      if (riskPercent) document.getElementById("riskPercent").value = riskPercent;
+    function saveData() {
+      localStorage.setItem('pnlData', JSON.stringify(pnlData));
+      localStorage.setItem('pnlLabels', JSON.stringify(pnlLabels));
+      localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
+      localStorage.setItem('currentPnL', currentPnL);
     }
 
-    function calculatePositionSize() {
-      const accountSize = parseFloat(document.getElementById("accountSize").value);
-      const riskPercent = parseFloat(document.getElementById("riskPercent").value);
-      const stopLoss = parseFloat(document.getElementById("stopLoss").value);
-      const pair = document.getElementById("pair").value;
+    function loadData() {
+      pnlData = JSON.parse(localStorage.getItem('pnlData')) || [0];
+      pnlLabels = JSON.parse(localStorage.getItem('pnlLabels')) || ['Start'];
+      tradeHistory = JSON.parse(localStorage.getItem('tradeHistory')) || [];
+      currentPnL = parseFloat(localStorage.getItem('currentPnL')) || 0;
 
-      if (!accountSize || !riskPercent || !stopLoss) {
-        document.getElementById("calcResult").textContent = "Please fill all fields.";
-        return;
-      }
+      document.getElementById('bubbleContainer').innerHTML = '';
+      tradeHistory.forEach(r => {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble', r > 0 ? 'win' : 'loss');
+        document.getElementById('bubbleContainer').appendChild(bubble);
+      });
 
-      saveCalcInputs();
-
-      const riskAmount = (accountSize * riskPercent) / 100;
-      let pipValue;
-
-      if (pair === "USDJPY") {
-        pipValue = 1000 / 150;
-      } else if (pair === "USDCAD") {
-        pipValue = 7.04;
-      } else {
-        pipValue = 10;
-      }
-
-      const lotSize = riskAmount / (stopLoss * pipValue);
-
-      document.getElementById("calcResult").textContent =
-        `Position Size: ${lotSize.toFixed(2)} lots`;
+      chart.data.labels = pnlLabels;
+      chart.data.datasets[0].data = pnlData;
+      chart.update();
+      updateWinRate();
+      updateStreakDisplay();
     }
 
-    window.onload = () => {
-      loadData();
-      loadCalcInputs();
-    };
+    window.onload = loadData;
   </script>
 </body>
 </html>
