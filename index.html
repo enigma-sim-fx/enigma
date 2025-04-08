@@ -1,325 +1,309 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.3">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="UTF-8" />
+  <title>ENIGMA</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #000;
+      color: #fff;
+    }
+    button, input, select {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+    input, select {
+      width: 200px;
+    }
+    .win-btn { background: #28a745; color: white; }
+    .loss-btn { background: #dc3545; color: white; }
+    .undo-btn { background: #ff9900; color: white; }
+    .buttons { margin-bottom: 20px; }
+    .bubble-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+      gap: 8px;
+    }
+    .bubble {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.5);
+      animation: pop 0.3s forwards;
+    }
+    .bubble.win { background-color: #28a745; }
+    .bubble.loss { background-color: #dc3545; }
+    @keyframes pop {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    canvas {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    .streak { margin: 10px 0; font-size: 18px; }
+    .winrate-box { font-size: 20px; font-weight: bold; margin-top: 10px; }
+    .calc-container {
+      background: #111;
+      padding: 20px;
+      margin-top: 40px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .calc-container h2 {
+      margin-bottom: 10px;
+    }
+    .calc-result {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ffcc;
+    }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;ENIGMA&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-family: Arial, sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #000;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>button, input, select {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 5px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: none;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>input, select {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>width: 200px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.win-btn { background: #28a745; color: white; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.loss-btn { background: #dc3545; color: white; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.undo-btn { background: #ff9900; color: white; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.buttons { margin-bottom: 20px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.bubble-container {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>justify-content: center;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>flex-wrap: wrap;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 20px 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.bubble {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>width: 25px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>height: 25px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 50%;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>opacity: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>transform: scale(0.5);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>animation: pop 0.3s forwards;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.bubble.win { background-color: #28a745; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.bubble.loss { background-color: #dc3545; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>@keyframes pop {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>to {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>opacity: 1;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>transform: scale(1);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>max-width: 600px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 20px auto;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.streak { margin: 10px 0; font-size: 18px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.winrate-box { font-size: 20px; font-weight: bold; margin-top: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.calc-container {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #111;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 40px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>max-width: 600px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-left: auto;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-right: auto;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.calc-container h2 {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-bottom: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.calc-result {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 18px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #00ffcc;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;ENIGMA&lt;/h1&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="buttons"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button class="win-btn" onclick="logTrade(true)"&gt;Win&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button class="loss-btn" onclick="logTrade(false)"&gt;Loss&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button class="undo-btn" onclick="undoLastTrade()"&gt;Undo&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="streak" id="streakDisplay"&gt;Streak: 0&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;canvas id="pnlChart" width="400" height="200"&gt;&lt;/canvas&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="winrate-box" id="winRateBox"&gt;Win Rate: 0%&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- Position Size Calculator --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="calc-container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;h2&gt;Position Size Calculator&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="number" id="accountSize" placeholder="Account Size (USD)"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="number" id="riskPercent" placeholder="Risk per Trade (%)"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="number" id="stopLoss" placeholder="Stop Loss (pips)"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;select id="pair"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;option value="EURUSD"&gt;EURUSD&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;option value="GBPUSD"&gt;GBPUSD&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;option value="AUDUSD"&gt;AUDUSD&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;option value="USDCAD"&gt;USDCAD&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;option value="USDJPY"&gt;USDJPY&lt;/option&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/select&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="calculatePositionSize()"&gt;Calculate&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="calc-result" id="calcResult"&gt;Position Size: -&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- Bubble Display Section (Below calculator) --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="bubble-container" id="bubbleContainer"&gt;&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- Sounds --&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;audio id="winSound" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.wav"&gt;&lt;/audio&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;audio id="lossSound" src="https://assets.mixkit.co/sfx/download/mixkit-wrong-answer-fail-notification-946.wav"&gt;&lt;/audio&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let pnlData = [0];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let pnlLabels = ['Start'];</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let currentPnL = 0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let winStreak = 0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let lossStreak = 0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let tradeHistory = [];</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const ctx = document.getElementById('pnlChart').getContext('2d');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const chart = new Chart(ctx, {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>type: 'line',</p>
-<p class="p1"><span class="Apple-converted-space">      </span>data: {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>labels: pnlLabels,</p>
-<p class="p1"><span class="Apple-converted-space">        </span>datasets: [{</p>
-<p class="p1"><span class="Apple-converted-space">          </span>label: 'PnL',</p>
-<p class="p1"><span class="Apple-converted-space">          </span>data: pnlData,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>fill: false,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>borderColor: '#00bfff',</p>
-<p class="p1"><span class="Apple-converted-space">          </span>tension: 0.1</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}]</p>
-<p class="p1"><span class="Apple-converted-space">      </span>},</p>
-<p class="p1"><span class="Apple-converted-space">      </span>options: {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>plugins: {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>legend: {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>labels: { color: '#fff' }</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>},</p>
-<p class="p1"><span class="Apple-converted-space">        </span>scales: {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>x: {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>ticks: { color: '#fff' },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>grid: { color: '#333' }</p>
-<p class="p1"><span class="Apple-converted-space">          </span>},</p>
-<p class="p1"><span class="Apple-converted-space">          </span>y: {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>ticks: { color: '#fff' },</p>
-<p class="p1"><span class="Apple-converted-space">            </span>grid: { color: '#333' }</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function saveData() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem('currentPnL', currentPnL);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function loadData() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const savedHistory = JSON.parse(localStorage.getItem('tradeHistory'));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const savedPnL = parseInt(localStorage.getItem('currentPnL'));</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (savedHistory &amp;&amp; !isNaN(savedPnL)) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>tradeHistory = savedHistory;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>currentPnL = savedPnL;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pnlData = [0];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pnlLabels = ['Start'];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('bubbleContainer').innerHTML = '';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>savedHistory.forEach((win, index) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const bubble = document.createElement('div');</p>
-<p class="p1"><span class="Apple-converted-space">          </span>bubble.classList.add('bubble', win ? 'win' : 'loss');</p>
-<p class="p1"><span class="Apple-converted-space">          </span>document.getElementById('bubbleContainer').appendChild(bubble);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">          </span>pnlData.push(pnlData[pnlData.length - 1] + (win ? 2 : -1));</p>
-<p class="p1"><span class="Apple-converted-space">          </span>pnlLabels.push(`Trade ${index + 1}`);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">        </span>chart.data.labels = pnlLabels;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>chart.data.datasets[0].data = pnlData;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>chart.update();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateWinRate();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>updateStreakDisplay();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function logTrade(win) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>tradeHistory.push(win);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const bubble = document.createElement('div');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>bubble.classList.add('bubble', win ? 'win' : 'loss');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('bubbleContainer').appendChild(bubble);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (win) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>currentPnL += 2;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('winSound').play();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>winStreak++;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>lossStreak = 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>currentPnL -= 1;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('lossSound').play();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>lossStreak++;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>winStreak = 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (currentPnL % 10 === 0 &amp;&amp; currentPnL !== 0) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });</p>
-<p class="p1"><span class="Apple-converted-space">        </span>alert(`Milestone! You're at ${currentPnL}R`);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateChart();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateStreakDisplay();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateWinRate();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>saveData();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function undoLastTrade() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (tradeHistory.length === 0) return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const lastTrade = tradeHistory.pop();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const bubbles = document.querySelectorAll('.bubble');</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const lastBubble = bubbles[bubbles.length - 1];</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (lastBubble) lastBubble.remove();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (lastTrade) currentPnL -= 2;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>else currentPnL += 1;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>pnlData.pop();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>pnlLabels.pop();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>chart.update();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateStreakDisplay();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>updateWinRate();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>saveData();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function updateChart() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>pnlData.push(currentPnL);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>pnlLabels.push(`Trade ${pnlData.length - 1}`);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>chart.update();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function updateStreakDisplay() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let message = 'Streak: ';</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (winStreak &gt;= 3) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>message += `${winStreak} Wins in a Row!`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else if (lossStreak &gt;= 3) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>message += `${lossStreak} Losses...`;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>message += winStreak &gt; 0 ? `${winStreak} Win` : lossStreak &gt; 0 ? `${lossStreak} Loss` : '0';</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('streakDisplay').textContent = message;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function updateWinRate() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const totalTrades = tradeHistory.length;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const wins = tradeHistory.filter(t =&gt; t).length;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const rate = totalTrades === 0 ? 0 : ((wins / totalTrades) * 100).toFixed(1);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById('winRateBox').textContent = `Win Rate: ${rate}%`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function saveCalcInputs() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem("accountSize", document.getElementById("accountSize").value);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>localStorage.setItem("riskPercent", document.getElementById("riskPercent").value);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function loadCalcInputs() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const accountSize = localStorage.getItem("accountSize");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const riskPercent = localStorage.getItem("riskPercent");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (accountSize) document.getElementById("accountSize").value = accountSize;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (riskPercent) document.getElementById("riskPercent").value = riskPercent;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function calculatePositionSize() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const accountSize = parseFloat(document.getElementById("accountSize").value);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const riskPercent = parseFloat(document.getElementById("riskPercent").value);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const stopLoss = parseFloat(document.getElementById("stopLoss").value);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const pair = document.getElementById("pair").value;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!accountSize || !riskPercent || !stopLoss) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById("calcResult").textContent = "Please fill all fields.";</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>saveCalcInputs();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const riskAmount = (accountSize * riskPercent) / 100;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>let pipValue;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (pair === "USDJPY") {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pipValue = 1000 / 150;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else if (pair === "USDCAD") {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pipValue = 7.04;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pipValue = 10;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const lotSize = riskAmount / (stopLoss * pipValue);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>document.getElementById("calcResult").textContent =</p>
-<p class="p1"><span class="Apple-converted-space">        </span>`Position Size: ${lotSize.toFixed(2)} lots`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>window.onload = () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>loadData();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>loadCalcInputs();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>};</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <h1>ENIGMA</h1>
+
+  <div class="buttons">
+    <button class="win-btn" onclick="logTrade(true)">Win</button>
+    <button class="loss-btn" onclick="logTrade(false)">Loss</button>
+    <button class="undo-btn" onclick="undoLastTrade()">Undo</button>
+  </div>
+
+  <div class="streak" id="streakDisplay">Streak: 0</div>
+
+  <canvas id="pnlChart" width="400" height="200"></canvas>
+  <div class="winrate-box" id="winRateBox">Win Rate: 0%</div>
+
+  <!-- Position Size Calculator -->
+  <div class="calc-container">
+    <h2>Position Size Calculator</h2>
+    <input type="number" id="accountSize" placeholder="Account Size (USD)">
+    <input type="number" id="riskPercent" placeholder="Risk per Trade (%)">
+    <input type="number" id="stopLoss" placeholder="Stop Loss (pips)">
+    <select id="pair">
+      <option value="EURUSD">EURUSD</option>
+      <option value="GBPUSD">GBPUSD</option>
+      <option value="AUDUSD">AUDUSD</option>
+      <option value="USDCAD">USDCAD</option>
+      <option value="USDJPY">USDJPY</option>
+    </select>
+    <button onclick="calculatePositionSize()">Calculate</button>
+    <div class="calc-result" id="calcResult">Position Size: -</div>
+  </div>
+
+  <!-- Bubble Display Section (Below calculator) -->
+  <div class="bubble-container" id="bubbleContainer"></div>
+
+  <!-- Sounds -->
+  <audio id="winSound" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.wav"></audio>
+  <audio id="lossSound" src="https://assets.mixkit.co/sfx/download/mixkit-wrong-answer-fail-notification-946.wav"></audio>
+
+  <script>
+    let pnlData = [0];
+    let pnlLabels = ['Start'];
+    let currentPnL = 0;
+    let winStreak = 0;
+    let lossStreak = 0;
+    let tradeHistory = [];
+
+    const ctx = document.getElementById('pnlChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: pnlLabels,
+        datasets: [{
+          label: 'PnL',
+          data: pnlData,
+          fill: false,
+          borderColor: '#00bfff',
+          tension: 0.1
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            labels: { color: '#fff' }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#fff' },
+            grid: { color: '#333' }
+          },
+          y: {
+            ticks: { color: '#fff' },
+            grid: { color: '#333' }
+          }
+        }
+      }
+    });
+
+    function saveData() {
+      localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
+      localStorage.setItem('currentPnL', currentPnL);
+    }
+
+    function loadData() {
+      const savedHistory = JSON.parse(localStorage.getItem('tradeHistory'));
+      const savedPnL = parseInt(localStorage.getItem('currentPnL'));
+
+      if (savedHistory && !isNaN(savedPnL)) {
+        tradeHistory = savedHistory;
+        currentPnL = savedPnL;
+        pnlData = [0];
+        pnlLabels = ['Start'];
+        document.getElementById('bubbleContainer').innerHTML = '';
+        savedHistory.forEach((win, index) => {
+          const bubble = document.createElement('div');
+          bubble.classList.add('bubble', win ? 'win' : 'loss');
+          document.getElementById('bubbleContainer').appendChild(bubble);
+
+          pnlData.push(pnlData[pnlData.length - 1] + (win ? 2 : -1));
+          pnlLabels.push(`Trade ${index + 1}`);
+        });
+        chart.data.labels = pnlLabels;
+        chart.data.datasets[0].data = pnlData;
+        chart.update();
+        updateWinRate();
+        updateStreakDisplay();
+      }
+    }
+
+    function logTrade(win) {
+      tradeHistory.push(win);
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble', win ? 'win' : 'loss');
+      document.getElementById('bubbleContainer').appendChild(bubble);
+
+      if (win) {
+        currentPnL += 2;
+        document.getElementById('winSound').play();
+        winStreak++;
+        lossStreak = 0;
+      } else {
+        currentPnL -= 1;
+        document.getElementById('lossSound').play();
+        lossStreak++;
+        winStreak = 0;
+      }
+
+      if (currentPnL % 10 === 0 && currentPnL !== 0) {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        alert(`Milestone! You're at ${currentPnL}R`);
+      }
+
+      updateChart();
+      updateStreakDisplay();
+      updateWinRate();
+      saveData();
+    }
+
+    function undoLastTrade() {
+      if (tradeHistory.length === 0) return;
+      const lastTrade = tradeHistory.pop();
+      const bubbles = document.querySelectorAll('.bubble');
+      const lastBubble = bubbles[bubbles.length - 1];
+      if (lastBubble) lastBubble.remove();
+
+      if (lastTrade) currentPnL -= 2;
+      else currentPnL += 1;
+
+      pnlData.pop();
+      pnlLabels.pop();
+      chart.update();
+      updateStreakDisplay();
+      updateWinRate();
+      saveData();
+    }
+
+    function updateChart() {
+      pnlData.push(currentPnL);
+      pnlLabels.push(`Trade ${pnlData.length - 1}`);
+      chart.update();
+    }
+
+    function updateStreakDisplay() {
+      let message = 'Streak: ';
+      if (winStreak >= 3) {
+        message += `${winStreak} Wins in a Row!`;
+      } else if (lossStreak >= 3) {
+        message += `${lossStreak} Losses...`;
+      } else {
+        message += winStreak > 0 ? `${winStreak} Win` : lossStreak > 0 ? `${lossStreak} Loss` : '0';
+      }
+      document.getElementById('streakDisplay').textContent = message;
+    }
+
+    function updateWinRate() {
+      const totalTrades = tradeHistory.length;
+      const wins = tradeHistory.filter(t => t).length;
+      const rate = totalTrades === 0 ? 0 : ((wins / totalTrades) * 100).toFixed(1);
+      document.getElementById('winRateBox').textContent = `Win Rate: ${rate}%`;
+    }
+
+    function saveCalcInputs() {
+      localStorage.setItem("accountSize", document.getElementById("accountSize").value);
+      localStorage.setItem("riskPercent", document.getElementById("riskPercent").value);
+    }
+
+    function loadCalcInputs() {
+      const accountSize = localStorage.getItem("accountSize");
+      const riskPercent = localStorage.getItem("riskPercent");
+
+      if (accountSize) document.getElementById("accountSize").value = accountSize;
+      if (riskPercent) document.getElementById("riskPercent").value = riskPercent;
+    }
+
+    function calculatePositionSize() {
+      const accountSize = parseFloat(document.getElementById("accountSize").value);
+      const riskPercent = parseFloat(document.getElementById("riskPercent").value);
+      const stopLoss = parseFloat(document.getElementById("stopLoss").value);
+      const pair = document.getElementById("pair").value;
+
+      if (!accountSize || !riskPercent || !stopLoss) {
+        document.getElementById("calcResult").textContent = "Please fill all fields.";
+        return;
+      }
+
+      saveCalcInputs();
+
+      const riskAmount = (accountSize * riskPercent) / 100;
+      let pipValue;
+
+      if (pair === "USDJPY") {
+        pipValue = 1000 / 150;
+      } else if (pair === "USDCAD") {
+        pipValue = 7.04;
+      } else {
+        pipValue = 10;
+      }
+
+      const lotSize = riskAmount / (stopLoss * pipValue);
+
+      document.getElementById("calcResult").textContent =
+        `Position Size: ${lotSize.toFixed(2)} lots`;
+    }
+
+    window.onload = () => {
+      loadData();
+      loadCalcInputs();
+    };
+  </script>
 </body>
 </html>
