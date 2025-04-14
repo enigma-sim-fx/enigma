@@ -1,262 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>ENIGMA</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
     body {
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
+      background: #000; color: #fff; font-family: Arial, sans-serif; text-align: center; padding: 20px;
     }
-
-    button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 5px;
-      border-radius: 5px;
-      border: none;
-    }
-
+    .buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    button, input { padding: 10px; font-size: 16px; border-radius: 5px; border: none; }
     .win-btn { background: #28a745; color: white; }
     .loss-btn { background: #dc3545; color: white; }
     .undo-btn { background: #ff9900; color: white; }
-
-    .buttons {
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+    input[type="number"] { width: 80px; }
+    .bubble-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 15px 0; }
+    .bubble { width: 20px; height: 20px; border-radius: 50%; opacity: 1; }
+    .win { background: #28a745; }
+    .loss { background: #dc3545; }
+    #cooldownOverlay, #tiltAlert, #lockoutScreen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.9); color: #fff; display: none;
+      align-items: center; justify-content: center; flex-direction: column; z-index: 10;
     }
-
-    .bubble-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 20px 0;
-    }
-
-    .bubble {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-    }
-
-    .bubble.win { background-color: #28a745; }
-    .bubble.loss { background-color: #dc3545; }
-
-    canvas {
-      max-width: 600px;
-      margin: 20px auto;
-      background: #111;
-      border-radius: 10px;
-      padding: 10px;
-    }
-
-    .streak, .winrate-box {
-      font-size: 18px;
-      margin-top: 10px;
-    }
-
-    #popup {
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #000;
-      border: 2px solid #fff;
-      padding: 20px;
-      border-radius: 10px;
-      display: none;
-      z-index: 9999;
-      width: 300px;
-      box-shadow: 0 0 10px #fff;
-    }
-
-    #popup p {
-      margin: 0;
-    }
+    .quote { font-size: 20px; margin-top: 15px; max-width: 300px; }
   </style>
 </head>
 <body>
 
-  <h1>ENIGMA</h1>
+<h1>ENIGMA</h1>
 
-  <div class="buttons">
-    <button class="win-btn" onclick="logTrade(true)">✔</button>
-    <button class="loss-btn" onclick="logTrade(false)">✘</button>
-    <button class="undo-btn" onclick="undoLastTrade()">⮌</button>
-  </div>
+<div class="buttons">
+  <input type="number" id="rValueInput" placeholder="R" step="0.1">
+  <button class="win-btn" onclick="logTrade(true)">Win</button>
+  <button class="loss-btn" onclick="logTrade(false)">Loss</button>
+  <button class="undo-btn" onclick="undoLastTrade()">Undo</button>
+</div>
 
-  <canvas id="pnlChart" width="400" height="200"></canvas>
+<div id="streakDisplay">Streak: 0</div>
+<canvas id="pnlChart" width="600" height="200"></canvas>
+<div id="winRateBox">Win Rate: 0%</div>
+<div class="bubble-container" id="bubbleContainer"></div>
 
-  <div class="bubble-container" id="bubbleContainer"></div>
+<audio id="winSound" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.wav"></audio>
+<audio id="lossSound" src="https://assets.mixkit.co/sfx/download/mixkit-wrong-answer-fail-notification-946.wav"></audio>
 
-  <div class="winrate-box" id="winRateBox">Win Rate: 0%</div>
-  <div class="streak" id="streakDisplay">Streak: 0</div>
+<div id="cooldownOverlay">
+  <h2>Cooldown Activated</h2>
+  <div class="quote" id="cooldownQuote"></div>
+</div>
 
-  <audio id="cheerSound" src="https://assets.mixkit.co/sfx/download/mixkit-cheering-crowd-loud-481.wav"></audio>
-  <audio id="winSound" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.wav"></audio>
-  <audio id="lossSound" src="https://assets.mixkit.co/sfx/download/mixkit-wrong-answer-fail-notification-946.wav"></audio>
+<div id="tiltAlert">
+  <h2>Slow Down</h2>
+  <p>You're trading too fast. Step back for a moment.</p>
+</div>
 
-  <div id="popup"><p id="popupMessage"></p></div>
+<div id="lockoutScreen">
+  <h2>Session Locked</h2>
+  <p>You've hit 3 losses. Take a break and return with focus.</p>
+</div>
 
-  <script>
-    let pnlData = [0];
-    let pnlLabels = ['Start'];
-    let currentPnL = 0;
-    let winStreak = 0;
-    let lossStreak = 0;
-    let tradeHistory = [];
+<script>
+  let pnlData = [0], pnlLabels = ['Start'], currentPnL = 0;
+  let winStreak = 0, lossStreak = 0, tradeHistory = [];
+  let lastTradeTime = 0, recentTradeCount = 0;
+  const cooldownQuotes = [
+    "Losses are part of the process.",
+    "Breathe. Regain clarity.",
+    "Stay calm and composed.",
+    "Reset your mind. Trade smart.",
+    "You're not your last trade.",
+    "Discipline > Emotion.",
+    "Patience is profit."
+  ];
 
-    const popupMessagesLoss = [
-      "Take a breath. Reset your mind.",
-      "Losses are part of the game. Stay focused.",
-      "Chill. You've got this.",
-      "Step back, then step up stronger.",
-      "Breathe. Regain clarity."
-    ];
-
-    const popupMessagesWin = [
-      "Great consistency — stay sharp.",
-      "Keep the rhythm going.",
-      "Well played — trust your process.",
-      "Momentum is good, stay disciplined.",
-      "You're doing well — stick to the plan."
-    ];
-
-    const chart = new Chart(document.getElementById('pnlChart'), {
-      type: 'line',
-      data: {
-        labels: pnlLabels,
-        datasets: [{
-          label: 'PnL',
-          data: pnlData,
-          fill: false,
-          borderColor: '#00bfff',
-          tension: 0.1
-        }]
-      },
-      options: {
-        plugins: { legend: { labels: { color: '#fff' } } },
-        scales: {
-          x: { ticks: { color: '#fff' }, grid: { color: '#444' } },
-          y: { ticks: { color: '#fff' }, grid: { color: '#444' } }
-        }
+  const chart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: pnlLabels,
+      datasets: [{
+        label: 'PnL',
+        data: pnlData,
+        borderColor: '#00bfff',
+        tension: 0.1,
+        fill: false
+      }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#fff' } } },
+      scales: {
+        x: { ticks: { color: '#fff' }, grid: { color: '#333' }},
+        y: { ticks: { color: '#fff' }, grid: { color: '#333' }}
       }
+    }
+  });
+
+  function logTrade(isWin) {
+    if (document.getElementById('lockoutScreen').style.display === 'flex') return;
+
+    const now = Date.now();
+    if (now - lastTradeTime < 60000) {
+      recentTradeCount++;
+      if (recentTradeCount >= 2) {
+        document.getElementById('tiltAlert').style.display = 'flex';
+        setTimeout(() => document.getElementById('tiltAlert').style.display = 'none', 2500);
+      }
+    } else {
+      recentTradeCount = 1;
+    }
+    lastTradeTime = now;
+
+    const rInput = parseFloat(document.getElementById("rValueInput").value);
+    const r = isNaN(rInput) || rInput <= 0 ? (isWin ? 2 : -1) : (isWin ? rInput : -rInput);
+    tradeHistory.push({ win: isWin, r });
+    currentPnL += r;
+
+    createBubble(isWin);
+    isWin ? winStreak++ && (lossStreak = 0) : lossStreak++ && (winStreak = 0);
+    isWin ? document.getElementById('winSound').play() : document.getElementById('lossSound').play();
+
+    if (lossStreak >= 3) {
+      document.getElementById('lockoutScreen').style.display = 'flex';
+      return;
+    }
+
+    if (!isWin) activateCooldown();
+
+    updateChart();
+    updateStreakDisplay();
+    updateWinRate();
+    saveData();
+  }
+
+  function undoLastTrade() {
+    if (!tradeHistory.length) return;
+    const last = tradeHistory.pop();
+    currentPnL -= last.r;
+    pnlData.pop(); pnlLabels.pop();
+    const bubbles = document.querySelectorAll('.bubble');
+    if (bubbles.length) bubbles[bubbles.length - 1].remove();
+    winStreak = 0; lossStreak = 0;
+    chart.update();
+    updateStreakDisplay(); updateWinRate(); saveData();
+  }
+
+  function updateChart() {
+    pnlData.push(currentPnL);
+    pnlLabels.push(`Trade ${pnlData.length - 1}`);
+    chart.update();
+  }
+
+  function createBubble(isWin) {
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${isWin ? 'win' : 'loss'}`;
+    document.getElementById('bubbleContainer').appendChild(bubble);
+  }
+
+  function updateStreakDisplay() {
+    let msg = 'Streak: ';
+    msg += winStreak >= 3 ? `${winStreak} Wins in a Row!` :
+           lossStreak >= 3 ? `${lossStreak} Losses...` :
+           winStreak > 0 ? `${winStreak} Win` :
+           lossStreak > 0 ? `${lossStreak} Loss` : '0';
+    document.getElementById('streakDisplay').textContent = msg;
+  }
+
+  function updateWinRate() {
+    const total = tradeHistory.length;
+    const wins = tradeHistory.filter(t => t.win).length;
+    const rate = total ? ((wins / total) * 100).toFixed(1) : 0;
+    document.getElementById('winRateBox').textContent = `Win Rate: ${rate}%`;
+  }
+
+  function activateCooldown() {
+    const overlay = document.getElementById('cooldownOverlay');
+    document.getElementById('cooldownQuote').textContent =
+      cooldownQuotes[Math.floor(Math.random() * cooldownQuotes.length)];
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.style.display = 'none', 60000); // 1 min
+  }
+
+  function saveData() {
+    localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
+    localStorage.setItem('currentPnL', currentPnL);
+  }
+
+  function loadData() {
+    const saved = JSON.parse(localStorage.getItem('tradeHistory'));
+    const savedPnL = parseFloat(localStorage.getItem('currentPnL'));
+    if (!saved || isNaN(savedPnL)) return;
+    tradeHistory = saved;
+    currentPnL = savedPnL;
+    pnlData = [0]; pnlLabels = ['Start'];
+    document.getElementById('bubbleContainer').innerHTML = '';
+    tradeHistory.forEach((t, i) => {
+      pnlData.push(pnlData[pnlData.length - 1] + t.r);
+      pnlLabels.push(`Trade ${i + 1}`);
+      createBubble(t.win);
     });
+    chart.data.labels = pnlLabels;
+    chart.data.datasets[0].data = pnlData;
+    chart.update();
+    updateWinRate(); updateStreakDisplay();
+  }
 
-    function showPopup(messageArray) {
-      const message = messageArray[Math.floor(Math.random() * messageArray.length)];
-      const popup = document.getElementById('popup');
-      document.getElementById('popupMessage').textContent = message;
-      popup.style.display = 'block';
-      setTimeout(() => popup.style.display = 'none', 4000);
-    }
-
-    function logTrade(win) {
-      const rValue = win ? 2 : -1;
-      tradeHistory.push(rValue);
-      currentPnL += rValue;
-
-      const bubble = document.createElement('div');
-      bubble.classList.add('bubble', win ? 'win' : 'loss');
-      document.getElementById('bubbleContainer').appendChild(bubble);
-
-      if (win) {
-        document.getElementById('winSound').play();
-        winStreak++;
-        lossStreak = 0;
-      } else {
-        document.getElementById('lossSound').play();
-        lossStreak++;
-        winStreak = 0;
-      }
-
-      if (lossStreak === 3) showPopup(popupMessagesLoss);
-      if (winStreak === 3) {
-        showPopup(popupMessagesWin);
-        document.getElementById('cheerSound').play();
-        confetti({ particleCount: 100, spread: 70, origin: { x: 0.2, y: 0.6 } });
-        confetti({ particleCount: 100, spread: 70, origin: { x: 0.8, y: 0.6 } });
-      }
-
-      pnlData.push(currentPnL);
-      pnlLabels.push(`Trade ${pnlData.length - 1}`);
-      chart.update();
-      updateWinRate();
-      updateStreakDisplay();
-      saveData();
-    }
-
-    function undoLastTrade() {
-      if (tradeHistory.length === 0) return;
-      const lastTrade = tradeHistory.pop();
-      currentPnL -= lastTrade;
-
-      const bubbles = document.querySelectorAll('.bubble');
-      if (bubbles.length) bubbles[bubbles.length - 1].remove();
-
-      pnlData.pop();
-      pnlLabels.pop();
-
-      winStreak = 0;
-      lossStreak = 0;
-
-      chart.update();
-      updateWinRate();
-      updateStreakDisplay();
-      saveData();
-    }
-
-    function updateWinRate() {
-      const total = tradeHistory.length;
-      const wins = tradeHistory.filter(r => r > 0).length;
-      const rate = total ? ((wins / total) * 100).toFixed(1) : 0;
-      document.getElementById('winRateBox').textContent = `Win Rate: ${rate}%`;
-    }
-
-    function updateStreakDisplay() {
-      document.getElementById('streakDisplay').textContent =
-        winStreak ? `Streak: ${winStreak} Win` :
-        lossStreak ? `Streak: ${lossStreak} Loss` :
-        'Streak: 0';
-    }
-
-    function saveData() {
-      localStorage.setItem('pnlData', JSON.stringify(pnlData));
-      localStorage.setItem('pnlLabels', JSON.stringify(pnlLabels));
-      localStorage.setItem('tradeHistory', JSON.stringify(tradeHistory));
-      localStorage.setItem('currentPnL', currentPnL);
-    }
-
-    function loadData() {
-      pnlData = JSON.parse(localStorage.getItem('pnlData')) || [0];
-      pnlLabels = JSON.parse(localStorage.getItem('pnlLabels')) || ['Start'];
-      tradeHistory = JSON.parse(localStorage.getItem('tradeHistory')) || [];
-      currentPnL = parseFloat(localStorage.getItem('currentPnL')) || 0;
-
-      document.getElementById('bubbleContainer').innerHTML = '';
-      tradeHistory.forEach(r => {
-        const bubble = document.createElement('div');
-        bubble.classList.add('bubble', r > 0 ? 'win' : 'loss');
-        document.getElementById('bubbleContainer').appendChild(bubble);
-      });
-
-      chart.data.labels = pnlLabels;
-      chart.data.datasets[0].data = pnlData;
-      chart.update();
-      updateWinRate();
-      updateStreakDisplay();
-    }
-
-    window.onload = loadData;
-  </script>
+  window.onload = loadData;
+</script>
 </body>
 </html>
